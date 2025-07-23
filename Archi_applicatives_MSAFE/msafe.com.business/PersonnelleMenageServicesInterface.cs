@@ -14,7 +14,7 @@ public interface PersonnelleMenageServicesInterface
      */
     
     List<Chambre> ListChambreaNettoyer();
-    Chambre chambreAnettoyer();
+    Chambre chambreAnettoyer(int chambreId);
     
 
 }

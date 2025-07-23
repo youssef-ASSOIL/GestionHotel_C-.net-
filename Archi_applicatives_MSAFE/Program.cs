@@ -2,6 +2,7 @@
 using Archi_applicatives_MSAFE.msafe.com.business;
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
@@ -15,6 +16,9 @@ builder.Services.AddDbContext<HotelDbContext>(options =>
         ServerVersion.AutoDetect("server=localhost;port=3306;database=hotel_db;user=root;password=;")));
 builder.Services.AddScoped<ClientsServicesInterface, ClientsServicesImplementation>();
 builder.Services.AddScoped<ReceptionisteServicesInterface, ReceptionisteServicesImplementation>();
+builder.Services.AddScoped<PersonnelleMenageServicesInterface, PersonnelleMenageServicesImplementation>();
+
+
 
 var app = builder.Build();
 
