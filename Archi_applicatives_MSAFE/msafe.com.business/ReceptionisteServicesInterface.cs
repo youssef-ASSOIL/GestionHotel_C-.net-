@@ -20,7 +20,10 @@ public interface ReceptionisteServicesInterface
     bool ReserverChambre(Client client, TypeChambre typeChambre ,DateTime date,int numerodechambre,int numerodePersonne);
     bool DeleteReservation(Client client ,int idReservation);
     double listTrarif();
-    List<Chambre> listChambresDisponibles(DateTime date);
+    List<Chambre> ListerChambresDisponibles(DateTime dateDebut, DateTime dateFin);
     Chambre DeclarerChambreanettoyer(int idChambre);
-    
+    List<Chambre> GetChambresNonOccupees();
+    bool AnnulerReservation(int reservationId);
+    bool EnregistrerArriveeClient(int reservationId);
+    void EnvoyerEmailAvis(Client client);
 }

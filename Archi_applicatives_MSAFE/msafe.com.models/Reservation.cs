@@ -14,9 +14,7 @@ public class Reservation
     [ForeignKey("Client")]
     public int ClientId { get; set; }
     public Client Client { get; set; }
-
-    public List<ChambreReservation> ChambreReservations { get; set; } = new();
-
+    
     [Required]
     public DateTime DateDebut { get; set; }
 
@@ -29,4 +27,6 @@ public class Reservation
     public bool EstAnnulee { get; set; }
 
     public DateTime DateCreation { get; set; } = DateTime.UtcNow;
+    public List<ChambreReservation> ChambreReservations { get; set; } = new();
+
 }

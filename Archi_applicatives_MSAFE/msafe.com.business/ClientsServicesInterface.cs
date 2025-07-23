@@ -8,5 +8,6 @@ public interface ClientsServicesInterface
     bool DeleteReservation(Client client ,int idReservation);
     double listTrarif();
     List<Chambre> listChambres(DateTime date);
+
     
 }
