@@ -215,5 +215,47 @@ public class ReceptionisteServicesImplementation:ReceptionisteServicesInterface
 
                 // TODO : Intégrer SendGrid, SMTP ou autre si nécessaire
             }
+    
+            public bool ReserverChambre(Client client, int idChambre, DateTime date, int nombreDePersonne)
+            {
+                var chambre = _context.Chambres
+                    .FirstOrDefault(c => c.Id == idChambre &&
+                                         c.Capacite >= nombreDePersonne &&
+                                         !c.EstOccupee);
+                if (chambre == null)
+                    return false;
+
+                var existingClient = _context.Clients.FirstOrDefault(c => c.Email == client.Email);
+                if (existingClient == null)
+                {
+                    _context.Clients.Add(client);
+                    _context.SaveChanges();
+                    existingClient = client;
+                }
+
+                var reservation = new Reservation
+                {
+                    ClientId = existingClient.Id,
+                    DateDebut = date,
+                    DateFin = date.AddDays(1),
+                    MontantTotal = chambre.TarifNuit,
+                    EstAnnulee = false,
+                    DateCreation = DateTime.Now
+                };
+
+                _context.Reservations.Add(reservation);
+                _context.SaveChanges();
+
+                _context.ChambreReservations.Add(new ChambreReservation
+                {
+                    ChambreId = chambre.Id,
+                    ReservationId = reservation.Id
+                });
+
+                chambre.EstOccupee = true;
+                _context.SaveChanges();
+
+                return true;
+            }
 
 }
