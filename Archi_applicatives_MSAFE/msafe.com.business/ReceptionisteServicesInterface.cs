@@ -16,14 +16,13 @@ public interface ReceptionisteServicesInterface
        Envoi d'email post-séjour : Optionel - Envoyer un email type "donnez votre avis" après le départ du client.
      * 
      */
-    List<Chambre> listChambres(DateTime date);
-    bool DeleteReservation(Client client ,int idReservation);
-    double listTrarif();
     List<Chambre> ListerChambresDisponibles(DateTime dateDebut, DateTime dateFin);
+    bool ReserverChambre(Client client, int idChambre, DateTime date, int nombreDePersonne);
+    bool AnnulerReservation(int reservationId, bool remboursementForce = false);
+    bool EnregistrerArriveeClient(int reservationId);
+    bool EnregistrerDepartClient(int reservationId);
+    void EnvoyerEmailAvis(Client client);
     Chambre DeclarerChambreanettoyer(int idChambre);
     List<Chambre> GetChambresNonOccupees();
-    bool AnnulerReservation(int reservationId);
-    bool EnregistrerArriveeClient(int reservationId);
-    void EnvoyerEmailAvis(Client client);
-    bool ReserverChambre(Client client, int idChambre, DateTime date, int nombreDePersonne);
+
 }
