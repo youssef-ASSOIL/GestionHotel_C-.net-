@@ -1,5 +1,9 @@
 using Archi_applicatives_MSAFE.Data;
 using Archi_applicatives_MSAFE.msafe.com.models;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Archi_applicatives_MSAFE.msafe.com.business;
 
@@ -11,79 +15,120 @@ public class ClientsServicesImplementation : ClientsServicesInterface
     {
         _context = context;
     }
-    public bool ReserverChambre(Client client, TypeChambre typeChambre, DateTime date, int numerodechambre, int numerodePersonne)
+
+    // Méthode pour obtenir les chambres disponibles selon la plage de dates et la capacité demandée
+    public List<Chambre> ListeChambresDisponibles(DateTime dateDebut, DateTime dateFin, int nombrePersonnes)
     {
-        var chambre = _context.Chambres.FirstOrDefault(c =>
-            c.Id == numerodechambre &&
-            c.Type == typeChambre &&
-            c.Capacite >= numerodePersonne &&
-            !c.EstOccupee);
+        // Toutes les chambres qui ont une capacité suffisante
+        var chambresCapacite = _context.Chambres
+            .Where(c => c.Capacite >= nombrePersonnes && !c.EstOccupee)
+            .ToList();
 
-        if (chambre == null)
-            return false;
-
-        var existingClient = _context.Clients.FirstOrDefault(c => c.Id == client.Id);
-        if (existingClient == null)
-        {
-            _context.Clients.Add(client);
-            _context.SaveChanges();
-            existingClient = client;
-        }
-
-        var reservation = new Reservation
-        {
-            ClientId = existingClient.Id,
-            DateDebut = date,
-            DateFin = date.AddDays(1),
-            MontantTotal = chambre.TarifNuit,
-            EstAnnulee = false
-        };
-
-        _context.Reservations.Add(reservation);
-        _context.SaveChanges();
-
-        _context.ChambreReservations.Add(new ChambreReservation
-        {
-            ChambreId = chambre.Id,
-            ReservationId = reservation.Id
-        });
-
-        chambre.EstOccupee = true;
-        _context.SaveChanges();
-
-        return true;
-    }
-
-
-    public bool DeleteReservation(Client client, int idReservation)
-    {
-        throw new NotImplementedException();
-    }
-
-    public double listTrarif()
-    {
-        throw new NotImplementedException();
-    }
-
-    public List<Chambre> listChambres(DateTime date)
-    {
-        // Étape 1 : Récupérer les réservations actives à cette date
-        var reservationsCeJour = _context.Reservations
-            .Where(r => !r.EstAnnulee &&
-                        r.DateDebut <= date &&
-                        r.DateFin >= date)
-            .SelectMany(r => r.ChambreReservations)
+        // Identifier les chambres déjà réservées sur la plage donnée
+        var chambresOccupees = _context.ChambreReservations
+            .Include(cr => cr.Reservation)
+            .Where(cr => 
+                (dateDebut < cr.Reservation.DateFin && dateFin > cr.Reservation.DateDebut)
+                && !cr.Reservation.EstAnnulee
+            )
             .Select(cr => cr.ChambreId)
             .Distinct()
             .ToList();
 
-        // Étape 2 : Récupérer les chambres non concernées
-        var chambresDisponibles = _context.Chambres
-            .Where(c => !reservationsCeJour.Contains(c.Id))
+        // Filtrer les chambres non occupées par réservation sur la plage
+        var chambresDisponibles = chambresCapacite
+            .Where(c => !chambresOccupees.Contains(c.Id))
             .ToList();
 
         return chambresDisponibles;
     }
 
-    
+    // Réserver des chambres si elles sont disponibles et simuler paiement
+    public Reservation ReserverChambres(int clientId, DateTime dateDebut, DateTime dateFin, List<int> chambreIds, string numeroCarteBancaire)
+    {
+        if (dateDebut >= dateFin)
+            throw new ArgumentException("Date de début doit être avant date de fin");
+
+        var chambres = ListeChambresDisponibles(dateDebut, dateFin, 0)
+            .Where(c => chambreIds.Contains(c.Id))
+            .ToList();
+
+        if (chambres.Count != chambreIds.Count)
+            throw new Exception("Certaines chambres ne sont pas disponibles sur cette plage.");
+
+        // Calcul du montant total (tarif * nombre de nuits)
+        var nbNuits = (dateFin - dateDebut).Days;
+        decimal montantTotal = chambres.Sum(c => c.TarifNuit) * nbNuits;
+
+        // Simuler le paiement (faux service)
+        if (!SimulerPaiement(numeroCarteBancaire, montantTotal))
+            throw new Exception("Paiement refusé");
+
+        // Créer la réservation
+        var reservation = new Reservation
+        {
+            ClientId = clientId,
+            DateDebut = dateDebut,
+            DateFin = dateFin,
+            MontantTotal = montantTotal,
+            EstAnnulee = false,
+            DateCreation = DateTime.UtcNow,
+        };
+
+        _context.Reservations.Add(reservation);
+        _context.SaveChanges();
+
+        // Associer les chambres réservées
+        foreach (var chambre in chambres)
+        {
+            var cr = new ChambreReservation
+            {
+                ChambreId = chambre.Id,
+                ReservationId = reservation.Id
+            };
+            _context.ChambreReservations.Add(cr);
+        }
+
+        _context.SaveChanges();
+
+        return reservation;
+    }
+
+    // Annulation de réservation avec gestion remboursement
+    public bool AnnulerReservation(int reservationId)
+    {
+        var reservation = _context.Reservations
+            .FirstOrDefault(r => r.Id == reservationId);
+
+        if (reservation == null)
+            throw new Exception("Réservation non trouvée");
+
+        if (reservation.EstAnnulee)
+            throw new Exception("Réservation déjà annulée");
+
+        var now = DateTime.UtcNow;
+        var heuresAvantDebut = (reservation.DateDebut - now).TotalHours;
+
+        // Annulation possible, remboursement si plus de 48h avant début
+        bool remboursement = heuresAvantDebut >= 48;
+
+        // Mise à jour état réservation
+        reservation.EstAnnulee = true;
+        _context.SaveChanges();
+
+        // Si remboursement => ici tu peux appeler un faux service de remboursement
+        if (remboursement)
+        {
+            // Logique de remboursement
+            // Exemple : SimulerRemboursement(reservation.MontantTotal);
+        }
+
+        return remboursement;
+    }
+
+    private bool SimulerPaiement(string numeroCarteBancaire, decimal montant)
+    {
+        // Faux service paiement : ici on accepte si numéro non vide et montant > 0
+        return !string.IsNullOrWhiteSpace(numeroCarteBancaire) && montant > 0;
+    }
 }

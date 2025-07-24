@@ -14,10 +14,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<HotelDbContext>(options =>
     options.UseMySql("server=localhost;port=3306;database=hotel_db;user=root;password=;",
         ServerVersion.AutoDetect("server=localhost;port=3306;database=hotel_db;user=root;password=;")));
-builder.Services.AddScoped<ClientsServicesInterface, ClientsServicesImplementation>();
+
 builder.Services.AddScoped<ReceptionisteServicesInterface, ReceptionisteServicesImplementation>();
 builder.Services.AddScoped<PersonnelleMenageServicesInterface, PersonnelleMenageServicesImplementation>();
-
+builder.Services.AddScoped<ClientsServicesInterface, ClientsServicesImplementation>();
 
 
 var app = builder.Build();

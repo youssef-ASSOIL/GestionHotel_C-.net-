@@ -3,12 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Archi_applicatives_MSAFE.msafe.com.models;
 
-[Table("client")] // 👈 Ensure EF maps to correct table name
+[Table("client")] // ok si ta table dans la BDD s'appelle bien "client"
 public class Client
 {
     [Key]
     public int Id { get; set; }
 
+    // 👇 Ces propriétés utilisent des champs privés, bien pour validation
     private string _nom = string.Empty;
     public string Nom
     {
@@ -32,11 +33,13 @@ public class Client
 
     [Required]
     public string Telephone { get; set; }
-// Add this navigation property
+
+    // 👇 Navigation vers les réservations
     public List<Reservation> Reservations { get; set; } = new List<Reservation>();
+
     public Client() { }
 
-    public Client(int id, string nom, string prenom, string email, string telephone )
+    public Client(int id, string nom, string prenom, string email, string telephone)
     {
         Id = id;
         Nom = nom;

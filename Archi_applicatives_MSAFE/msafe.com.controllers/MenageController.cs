@@ -16,12 +16,21 @@ public class MenageController : ControllerBase
     }
 
     // GET: api/menage/chambres-a-nettoyer
-    [HttpGet("chambres-a-nettoyer")]
-    public ActionResult<List<Chambre>> GetChambresANettoyer()
-    {
-        var chambres = _menageService.ListChambreaNettoyer();
-        return Ok(chambres);
-    }
+	[HttpGet("chambres-a-nettoyer")]
+	public ActionResult GetChambresANettoyer()
+	{
+    	var chambres = _menageService.ListChambreaNettoyer();
+
+    	var result = chambres.Select(c => new {
+        	c.Numero,
+        	PrioriteNettoyage = (int)c.PrioriteNettoyage,
+        	c.EstNettoyee,
+        	c.EstOccupee
+    	});
+
+    	return Ok(result);
+	}
+
 
     // POST: api/menage/marquer-nettoyee/5
     [HttpPost("marquer-nettoyee/{id}")]
