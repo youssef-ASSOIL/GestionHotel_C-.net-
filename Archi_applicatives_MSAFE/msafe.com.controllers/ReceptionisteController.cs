@@ -45,24 +45,18 @@ namespace Archi_applicatives_MSAFE.msafe.com.controllers
         
         [HttpPost("ajouterreservation/{idChambre}")]
         public IActionResult AjouterReservation(
-            [FromBody] Client client,
             int idChambre,
             [FromQuery] DateTime date,
-            [FromQuery] int nombreDePersonne)
+            [FromQuery] int nombreDePersonne,
+            [FromBody] Client client)
         {
-            var success = _service.ReserverChambre(
-                client,
-                typeChambre: TypeChambre.Double, // facultatif ou récupérable selon ta logique
-                date,
-                idChambre,
-                nombreDePersonne
-            );
+            bool ok = _service.ReserverChambre(client, idChambre, date, nombreDePersonne);
+            if (!ok)
+                return BadRequest("Chambre indisponible ou informations invalides");
 
-            if (!success)
-                return BadRequest(new { message = "Impossible de réserver la chambre." });
-
-            return Ok(new { message = "Réservation ajoutée avec succès." });
+            return Ok("Réservation enregistrée");
         }
+
 
         [HttpGet("disponibles")]
         public IActionResult GetChambresDisponibles([FromQuery] DateTime dateDebut, [FromQuery] DateTime dateFin)
